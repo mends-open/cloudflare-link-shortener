@@ -2,6 +2,9 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const slug = url.pathname.replace(/^\//, "");
+    if (slug && !/^[-\w]+$/.test(slug)) {
+      return redirectFallback(env);
+    }
 
     let response;
     if (!slug) {
@@ -41,11 +44,11 @@ async function logRequest(env, slug, request, response) {
       method: request.method,
       url: request.url,
       cf: request.cf,
-      headers: Object.fromEntries(request.headers)
+      headers: sanitizeHeaders(request.headers)
     },
     response: {
       status: response.status,
-      headers: Object.fromEntries(response.headers)
+      headers: sanitizeHeaders(response.headers)
     }
   };
 
@@ -53,11 +56,33 @@ async function logRequest(env, slug, request, response) {
     await fetch(env.LOG_ENDPOINT, {
       method: 'POST',
       headers: {
-        'content-type': 'application/json'
+        'content-type': 'application/json',
+        ...(env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET
+          ? {
+              'cf-access-client-id': env.CF_ACCESS_CLIENT_ID,
+              'cf-access-client-secret': env.CF_ACCESS_CLIENT_SECRET
+            }
+          : {})
       },
       body: JSON.stringify(payload)
     });
   } catch (err) {
     // Swallow logging errors
   }
+}
+
+function sanitizeHeaders(headers) {
+  const forbidden = new Set([
+    'authorization',
+    'cookie',
+    'cf-access-client-id',
+    'cf-access-client-secret'
+  ]);
+  const result = {};
+  for (const [key, value] of headers.entries()) {
+    if (!forbidden.has(key.toLowerCase())) {
+      result[key] = value;
+    }
+  }
+  return result;
 }
