@@ -9,10 +9,4 @@
       "id": "4730478eed524eabb055ba52ac573b4d"
     }
   ],
-  "vars": {
-    "FALLBACK_URL": "",
-    "LOG_ENDPOINT": "",
-    "CF_ACCESS_CLIENT_ID": "",
-    "CF_ACCESS_CLIENT_SECRET": ""
-  }
 }
