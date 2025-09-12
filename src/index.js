@@ -25,10 +25,11 @@ export default {
   }
 };
 
-const DEFAULT_FALLBACK = "https://polskilekarz.eu";
-
 function redirectFallback(env) {
-  const target = env.FALLBACK_URL || DEFAULT_FALLBACK;
+  const target = env.FALLBACK_URL;
+  if (!target) {
+    return new Response("FALLBACK_URL not configured", { status: 500 });
+  }
   return Response.redirect(target, 302);
 }
 
