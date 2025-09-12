@@ -5,17 +5,17 @@ export default {
 
     let response;
     if (!slug) {
-      response = notFound(env);
+      response = redirectFallback(env);
     } else {
       const encoded = await env.LINKS?.get(slug);
       if (!encoded) {
-        response = notFound(env);
+        response = redirectFallback(env);
       } else {
         try {
           const target = atob(encoded);
           response = Response.redirect(target, 302);
         } catch (err) {
-          response = notFound(env, 500);
+          response = redirectFallback(env);
         }
       }
     }
@@ -25,13 +25,11 @@ export default {
   }
 };
 
-function notFound(env, status = 404) {
-  if (env.FALLBACK_URL) {
-    return Response.redirect(env.FALLBACK_URL, 302);
-  }
-  return new Response(status === 404 ? 'Not found' : 'Invalid URL', {
-    status,
-  });
+const DEFAULT_FALLBACK = "https://polskilekarz.eu";
+
+function redirectFallback(env) {
+  const target = env.FALLBACK_URL || DEFAULT_FALLBACK;
+  return Response.redirect(target, 302);
 }
 
 async function logRequest(env, slug, request, response) {
