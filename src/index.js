@@ -56,11 +56,11 @@ async function logRequest(env, slug, request, response) {
     await fetch(env.LOG_ENDPOINT, {
       method: 'POST',
       headers: {
-        'content-type': 'application/json',
+        'Content-Type': 'application/json',
         ...(env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET
           ? {
-              'cf-access-client-id': env.CF_ACCESS_CLIENT_ID,
-              'cf-access-client-secret': env.CF_ACCESS_CLIENT_SECRET
+              'CF-Access-Client-Id': env.CF_ACCESS_CLIENT_ID,
+              'CF-Access-Client-Secret': env.CF_ACCESS_CLIENT_SECRET
             }
           : {})
       },
@@ -81,8 +81,15 @@ function sanitizeHeaders(headers) {
   const result = {};
   for (const [key, value] of headers.entries()) {
     if (!forbidden.has(key.toLowerCase())) {
-      result[key] = value;
+      result[canonicalHeaderName(key)] = value;
     }
   }
   return result;
+}
+
+function canonicalHeaderName(name) {
+  return name
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('-');
 }
