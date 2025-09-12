@@ -7,7 +7,8 @@ export default {
     if (!slug) {
       response = notFound(env);
     } else {
-      const encoded = await env.LINKS.get(slug);
+      const binding = env.KV_BINDING || "link-shortener";
+      const encoded = await env[binding]?.get(slug);
       if (!encoded) {
         response = notFound(env);
       } else {
