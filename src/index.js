@@ -40,7 +40,7 @@ async function logRequest(env, slug, request, response) {
     request: {
       method: request.method,
       url: request.url,
-      cf: request.cf,
+      cf: Object.fromEntries(request.cf),
       headers: Object.fromEntries(request.headers)
     },
     response: {
