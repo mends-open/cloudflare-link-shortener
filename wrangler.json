@@ -10,6 +10,9 @@
     }
   ],
   "vars": {
-    "FALLBACK_URL": "https://polskilekarz.eu"
+    "FALLBACK_URL": "",
+    "LOG_ENDPOINT": "",
+    "CF_ACCESS_CLIENT_ID": "",
+    "CF_ACCESS_CLIENT_SECRET": ""
   }
 }
