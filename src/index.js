@@ -7,8 +7,7 @@ export default {
     if (!slug) {
       response = notFound(env);
     } else {
-      const binding = env.LINKS;
-      const encoded = await env[binding]?.get(slug);
+      const encoded = await env.LINKS?.get(slug);
       if (!encoded) {
         response = notFound(env);
       } else {

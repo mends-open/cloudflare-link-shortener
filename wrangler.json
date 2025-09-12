@@ -2,10 +2,10 @@
   "name": "cf-link-shortener",
   "main": "src/index.js",
   "compatibility_date": "2024-06-20",
-    "kv_namespaces": [
+  "kv_namespaces": [
     {
       "binding": "LINKS",
-      "id": "4730478eed524eabb055ba52ac573b4d",
+      "id": "4730478eed524eabb055ba52ac573b4d"
     }
   ]
 }
