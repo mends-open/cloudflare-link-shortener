@@ -1,12 +1,5 @@
 {
   "name": "cf-link-shortener",
   "main": "src/index.js",
-  "compatibility_date": "2024-06-20",
-  "kv_namespaces": [
-    { "binding": "LINKS", "id": "YOUR_KV_NAMESPACE_ID" }
-  ],
-  "vars": {
-    "LOG_ENDPOINT": "https://example.com/log",
-    "FALLBACK_URL": "https://example.com"
-  }
+  "compatibility_date": "2024-06-20"
 }
