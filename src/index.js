@@ -17,13 +17,13 @@ export default {
         try {
           const target = atob(encoded);
           response = Response.redirect(target, 302);
+          ctx.waitUntil(logRequest(env, slug, request, response));
         } catch (err) {
           response = redirectFallback(env);
         }
       }
     }
 
-    ctx.waitUntil(logRequest(env, slug, request, response));
     return response;
   }
 };
