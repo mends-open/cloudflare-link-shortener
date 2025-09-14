@@ -2,30 +2,36 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const slug = url.pathname.replace(/^\//, "");
-    let response;
+    log('slug', { slug });
+    let res;
     if (slug && !/^[-\w]+$/.test(slug)) {
-      response = redirectFallback(env);
+      log('bad-slug', { slug });
+      res = goHome(env);
     } else if (!slug) {
-      response = redirectFallback(env);
+      log('no-slug');
+      res = goHome(env);
     } else {
       const encoded = await env.LINKS?.get(slug);
       if (!encoded) {
-        response = redirectFallback(env);
+        log('miss', { slug });
+        res = goHome(env);
       } else {
         try {
           const target = atob(encoded);
-          response = Response.redirect(target, 302);
-          ctx.waitUntil(logRequest(env, slug, request, response));
+          log('hit', { slug, target });
+          res = Response.redirect(target, 302);
+          ctx.waitUntil(sendLog(env, slug, request, res));
         } catch (err) {
-          response = redirectFallback(env);
+          log('decode-error', { slug });
+          res = goHome(env);
         }
       }
     }
-    return response;
+    return res;
   }
 };
 
-function redirectFallback(env) {
+function goHome(env) {
   const target = env.FALLBACK_URL;
   if (!target) {
     return new Response("FALLBACK_URL not configured", { status: 500 });
@@ -33,7 +39,7 @@ function redirectFallback(env) {
   return Response.redirect(target, 302);
 }
 
-async function logRequest(env, slug, request, response) {
+async function sendLog(env, slug, request, res) {
   if (!env.LOG_ENDPOINT) return;
   const payload = {
     slug,
@@ -41,11 +47,11 @@ async function logRequest(env, slug, request, response) {
       method: request.method,
       url: request.url,
       cf: request.cf,
-      headers: sanitizeHeaders(request.headers)
+      headers: cleanHeaders(request.headers)
     },
     response: {
-      status: response.status,
-      headers: sanitizeHeaders(response.headers)
+      status: res.status,
+      headers: cleanHeaders(res.headers)
     }
   };
 
@@ -64,11 +70,11 @@ async function logRequest(env, slug, request, response) {
       body: JSON.stringify(payload)
     });
   } catch (err) {
-    // Swallow logging errors
+    log('log-error', { err: err.message });
   }
 }
 
-function sanitizeHeaders(headers) {
+function cleanHeaders(headers) {
   const forbidden = new Set([
     'authorization',
     'cookie',
@@ -78,15 +84,23 @@ function sanitizeHeaders(headers) {
   const result = {};
   for (const [key, value] of headers.entries()) {
     if (!forbidden.has(key.toLowerCase())) {
-      result[canonicalHeaderName(key)] = value;
+      result[fixHeader(key)] = value;
     }
   }
   return result;
 }
 
-function canonicalHeaderName(name) {
+function fixHeader(name) {
   return name
     .split('-')
     .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join('-');
+}
+
+function log(msg, data) {
+  if (data) {
+    console.log(msg, data);
+  } else {
+    console.log(msg);
+  }
 }
