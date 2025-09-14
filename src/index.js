@@ -2,12 +2,10 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const slug = url.pathname.replace(/^\//, "");
-    if (slug && !/^[-\w]+$/.test(slug)) {
-      return redirectFallback(env);
-    }
-
     let response;
-    if (!slug) {
+    if (slug && !/^[-\w]+$/.test(slug)) {
+      response = redirectFallback(env);
+    } else if (!slug) {
       response = redirectFallback(env);
     } else {
       const encoded = await env.LINKS?.get(slug);
@@ -17,13 +15,13 @@ export default {
         try {
           const target = atob(encoded);
           response = Response.redirect(target, 302);
-          ctx.waitUntil(logRequest(env, slug, request, response));
         } catch (err) {
           response = redirectFallback(env);
         }
       }
     }
 
+    ctx.waitUntil(logRequest(env, slug, request, response));
     return response;
   }
 };
