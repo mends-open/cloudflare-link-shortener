@@ -2,28 +2,24 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const slug = url.pathname.replace(/^\//, "");
-    if (slug && !/^[-\w]+$/.test(slug)) {
-      return redirectFallback(env);
-    }
 
-    let response;
-    if (!slug) {
-      response = redirectFallback(env);
-    } else {
+    let target = null;
+    let found = false;
+
+    if (slug && /^[-\w]+$/.test(slug)) {
       const encoded = await env.LINKS?.get(slug);
-      if (!encoded) {
-        response = redirectFallback(env);
-      } else {
+      if (encoded) {
         try {
-          const target = atob(encoded);
-          response = Response.redirect(target, 302);
-          ctx.waitUntil(logRequest(env, slug, request, response));
+          target = atob(encoded);
+          found = true;
         } catch (err) {
-          response = redirectFallback(env);
+          // invalid base64, fall through to fallback
         }
       }
     }
 
+    const response = target ? Response.redirect(target, 302) : redirectFallback(env);
+    ctx.waitUntil(logRequest(env, request, response, found));
     return response;
   }
 };
@@ -36,10 +32,10 @@ function redirectFallback(env) {
   return Response.redirect(target, 302);
 }
 
-async function logRequest(env, slug, request, response) {
+async function logRequest(env, request, response, found) {
   if (!env.LOG_ENDPOINT) return;
   const payload = {
-    slug,
+    found,
     request: {
       method: request.method,
       url: request.url,
