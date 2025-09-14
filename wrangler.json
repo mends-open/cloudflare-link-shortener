@@ -9,4 +9,9 @@
       "id": "4730478eed524eabb055ba52ac573b4d"
     }
   ],
+  "vars": {
+    "LOG_ENDPOINT": "https://panel-local.polskilekarz.eu/cloudflare/link-clicks",
+    "FALLBACK_URL": "https://polskilekarz.eu"
+  }
 }
+
