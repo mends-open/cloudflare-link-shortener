@@ -71,12 +71,12 @@ async function sendLog(env, slug, request, res) {
 }
 
 async function reserveLogKey(store, slug) {
-  const counterKey = `link-${slug}:counter`;
+  const counterKey = `${slug}:counter`;
   const raw = await store.get(counterKey);
   const index = Number.parseInt(raw, 10) || 0;
   return {
     counterKey,
-    logKey: `link-${slug}:${index}`,
+    logKey: `${slug}:${index}`,
     nextIndex: index + 1
   };
 }
