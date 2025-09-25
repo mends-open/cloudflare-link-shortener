@@ -40,7 +40,7 @@ function goHome(env) {
 }
 
 async function sendLog(env, slug, request, res) {
-  if (!env.LOG_ENDPOINT) return;
+  if (!env.LOGS) return;
   const payload = {
     slug,
     request: {
@@ -52,26 +52,56 @@ async function sendLog(env, slug, request, res) {
     response: {
       status: res.status,
       headers: cleanHeaders(res.headers)
-    }
+    },
+    timestamp: new Date().toISOString()
   };
 
   try {
-    await fetch(env.LOG_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET
-          ? {
-              'CF-Access-Client-Id': env.CF_ACCESS_CLIENT_ID,
-              'CF-Access-Client-Secret': env.CF_ACCESS_CLIENT_SECRET
-            }
-          : {})
-      },
-      body: JSON.stringify(payload)
-    });
+    const reservation = await reserveLogKey(env.LOGS, slug);
+    if (!reservation) {
+      log('log-key-error', { slug });
+      return;
+    }
+    const encoded = await compressToBase64(payload);
+    await env.LOGS.put(reservation.logKey, encoded);
+    await env.LOGS.put(reservation.counterKey, String(reservation.nextIndex));
   } catch (err) {
     log('log-error', { err: err.message });
   }
+}
+
+async function reserveLogKey(store, slug) {
+  const counterKey = `${slug}:counter`;
+  const raw = await store.get(counterKey);
+  const index = Number.parseInt(raw, 10) || 0;
+  return {
+    counterKey,
+    logKey: `${slug}:${index}`,
+    nextIndex: index + 1
+  };
+}
+
+async function compressToBase64(data) {
+  const text = JSON.stringify(data);
+  const encoder = new TextEncoder();
+  const input = encoder.encode(text);
+  const stream = new CompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  await writer.write(input);
+  await writer.close();
+  const compressed = await new Response(stream.readable).arrayBuffer();
+  return arrayBufferToBase64(compressed);
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
 }
 
 function cleanHeaders(headers) {
