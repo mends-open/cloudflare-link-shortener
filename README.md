@@ -6,14 +6,14 @@ When a slug is requested the worker looks up the corresponding entry, decodes th
 ## Features
 - **Simple redirects** – map `https://your.worker.dev/my-slug` to a long URL stored in KV.
 - **Fallback handling** – unknown or malformed slugs redirect to a default URL.
-- **Structured logging (optional)** – capture request/response metadata into a second KV namespace for later analysis, compressed with gzip to save space.
+- **Structured logging (optional)** – capture request/response metadata alongside links in the same KV namespace, compressed with gzip to save space.
 
 ## Prerequisites
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/install-and-update/) 3.x
 - A Cloudflare account with access to Workers and KV
 
 ## Configuration
-1. Create two KV namespaces (one for links, one for logs) and bind them in `wrangler.json` as `LINKS` and `LOGS`. Logging is optional; if you do not need it you can remove the `LOGS` binding.
+1. Create a KV namespace for links and bind it in `wrangler.json` as `LINKS`. Logging entries are stored in the same namespace under `slug:entries:<uuid>` keys, so no additional binding is required.
 2. Set the `FALLBACK_URL` variable to the URL you want users to see when a slug is missing or invalid.
 
 Update the placeholder IDs in `wrangler.json` with your actual namespace IDs:
@@ -21,8 +21,7 @@ Update the placeholder IDs in `wrangler.json` with your actual namespace IDs:
 ```json
 {
   "kv_namespaces": [
-    { "binding": "LINKS", "id": "<your-links-namespace-id>" },
-    { "binding": "LOGS", "id": "<your-logs-namespace-id>" }
+    { "binding": "LINKS", "id": "<your-links-namespace-id>" }
   ],
   "vars": {
     "FALLBACK_URL": "https://example.com"
