@@ -6,5 +6,7 @@
   "scripts": {
     "test": "echo 'No tests specified'"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "uuidv7": "^1.0.2"
+  }
 }
