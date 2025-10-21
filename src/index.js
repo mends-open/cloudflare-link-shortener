@@ -42,7 +42,7 @@ function goHome(env) {
 }
 
 async function sendLog(env, slug, request, res) {
-  if (!env.LOGS) return;
+  if (!env.LINKS) return;
   const payload = {
     slug,
     request: {
@@ -59,9 +59,9 @@ async function sendLog(env, slug, request, res) {
   };
 
   try {
-    const logKey = `${slug}:${uuidv7()}`;
+    const logKey = `${slug}:entries:${uuidv7()}`;
     const encoded = await compressToBase64(payload);
-    await env.LOGS.put(logKey, encoded);
+    await env.LINKS.put(logKey, encoded);
   } catch (err) {
     log('log-error', { err: err.message });
   }
