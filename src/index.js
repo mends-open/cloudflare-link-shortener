@@ -1,3 +1,5 @@
+import { uuidv7 } from 'uuidv7';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -57,28 +59,12 @@ async function sendLog(env, slug, request, res) {
   };
 
   try {
-    const reservation = await reserveLogKey(env.LOGS, slug);
-    if (!reservation) {
-      log('log-key-error', { slug });
-      return;
-    }
+    const logKey = `${slug}:${uuidv7()}`;
     const encoded = await compressToBase64(payload);
-    await env.LOGS.put(reservation.logKey, encoded);
-    await env.LOGS.put(reservation.counterKey, String(reservation.nextIndex));
+    await env.LOGS.put(logKey, encoded);
   } catch (err) {
     log('log-error', { err: err.message });
   }
-}
-
-async function reserveLogKey(store, slug) {
-  const counterKey = `${slug}:counter`;
-  const raw = await store.get(counterKey);
-  const index = Number.parseInt(raw, 10) || 0;
-  return {
-    counterKey,
-    logKey: `${slug}:${index}`,
-    nextIndex: index + 1
-  };
 }
 
 async function compressToBase64(data) {
@@ -134,3 +120,4 @@ function log(msg, data) {
     console.log(msg);
   }
 }
+
