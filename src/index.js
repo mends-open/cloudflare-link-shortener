@@ -57,28 +57,12 @@ async function sendLog(env, slug, request, res) {
   };
 
   try {
-    const reservation = await reserveLogKey(env.LOGS, slug);
-    if (!reservation) {
-      log('log-key-error', { slug });
-      return;
-    }
+    const logKey = `${slug}:${generateUuidV7()}`;
     const encoded = await compressToBase64(payload);
-    await env.LOGS.put(reservation.logKey, encoded);
-    await env.LOGS.put(reservation.counterKey, String(reservation.nextIndex));
+    await env.LOGS.put(logKey, encoded);
   } catch (err) {
     log('log-error', { err: err.message });
   }
-}
-
-async function reserveLogKey(store, slug) {
-  const counterKey = `${slug}:counter`;
-  const raw = await store.get(counterKey);
-  const index = Number.parseInt(raw, 10) || 0;
-  return {
-    counterKey,
-    logKey: `${slug}:${index}`,
-    nextIndex: index + 1
-  };
 }
 
 async function compressToBase64(data) {
@@ -133,4 +117,40 @@ function log(msg, data) {
   } else {
     console.log(msg);
   }
+}
+
+function generateUuidV7() {
+  const now = BigInt(Date.now());
+  const timeHigh = now >> 12n;
+  const timeLow = Number(now & 0xfffn);
+  const bytes = new Uint8Array(16);
+  const cryptoObj = globalThis.crypto;
+
+  if (!cryptoObj || typeof cryptoObj.getRandomValues !== 'function') {
+    throw new Error('crypto.getRandomValues is not supported');
+  }
+
+  bytes[0] = Number((timeHigh >> 40n) & 0xffn);
+  bytes[1] = Number((timeHigh >> 32n) & 0xffn);
+  bytes[2] = Number((timeHigh >> 24n) & 0xffn);
+  bytes[3] = Number((timeHigh >> 16n) & 0xffn);
+  bytes[4] = Number((timeHigh >> 8n) & 0xffn);
+  bytes[5] = Number(timeHigh & 0xffn);
+  bytes[6] = 0x70 | (timeLow >> 8);
+  bytes[7] = timeLow & 0xff;
+
+  const rand = cryptoObj.getRandomValues(new Uint8Array(8));
+  bytes[8] = (rand[0] & 0x3f) | 0x80;
+  bytes[9] = rand[1];
+  bytes[10] = rand[2];
+  bytes[11] = rand[3];
+  bytes[12] = rand[4];
+  bytes[13] = rand[5];
+  bytes[14] = rand[6];
+  bytes[15] = rand[7];
+
+  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0'));
+  return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex
+    .slice(6, 8)
+    .join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10).join('')}`;
 }
